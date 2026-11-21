@@ -1,0 +1,52 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Etl.Domain", "src\Etl.Domain\Etl.Domain.csproj", "{CD3AFACA-49B7-46B5-AAC9-F36DBBB00A2C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Etl.Application", "src\Etl.Application\Etl.Application.csproj", "{BA1C364B-3954-4D77-AB91-3E10B37E5088}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Etl.Infrastructure", "src\Etl.Infrastructure\Etl.Infrastructure.csproj", "{DC0784BE-939B-4A48-95BD-AC7D003E7795}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Etl.Worker", "src\Etl.Worker\Etl.Worker.csproj", "{7EE80688-5543-4485-982F-5FD0F58DD593}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Etl.MockApi", "src\Etl.MockApi\Etl.MockApi.csproj", "{FB67707E-9B89-4769-AA9B-E3039D087FB7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Etl.Tests", "tests\Etl.Tests\Etl.Tests.csproj", "{FB3F403F-1E2A-4024-BFD0-FAF1B120029F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CD3AFACA-49B7-46B5-AAC9-F36DBBB00A2C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CD3AFACA-49B7-46B5-AAC9-F36DBBB00A2C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CD3AFACA-49B7-46B5-AAC9-F36DBBB00A2C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CD3AFACA-49B7-46B5-AAC9-F36DBBB00A2C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BA1C364B-3954-4D77-AB91-3E10B37E5088}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BA1C364B-3954-4D77-AB91-3E10B37E5088}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BA1C364B-3954-4D77-AB91-3E10B37E5088}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BA1C364B-3954-4D77-AB91-3E10B37E5088}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DC0784BE-939B-4A48-95BD-AC7D003E7795}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DC0784BE-939B-4A48-95BD-AC7D003E7795}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DC0784BE-939B-4A48-95BD-AC7D003E7795}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DC0784BE-939B-4A48-95BD-AC7D003E7795}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7EE80688-5543-4485-982F-5FD0F58DD593}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7EE80688-5543-4485-982F-5FD0F58DD593}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7EE80688-5543-4485-982F-5FD0F58DD593}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7EE80688-5543-4485-982F-5FD0F58DD593}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FB67707E-9B89-4769-AA9B-E3039D087FB7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FB67707E-9B89-4769-AA9B-E3039D087FB7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FB67707E-9B89-4769-AA9B-E3039D087FB7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FB67707E-9B89-4769-AA9B-E3039D087FB7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FB3F403F-1E2A-4024-BFD0-FAF1B120029F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FB3F403F-1E2A-4024-BFD0-FAF1B120029F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FB3F403F-1E2A-4024-BFD0-FAF1B120029F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FB3F403F-1E2A-4024-BFD0-FAF1B120029F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

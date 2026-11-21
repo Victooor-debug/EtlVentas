@@ -1,0 +1,8 @@
+bin/
+obj/
+.vs/
+*.user
+logs/
+staging/
+appsettings.*.local.json
+secrets.json
