@@ -117,7 +117,7 @@ public sealed class SqlDimensionLoader(IConfiguration config, ILogger<SqlDimensi
             c.Key.Contains("Audit", StringComparison.OrdinalIgnoreCase) ||
             (c.Value?.Contains("sistema_analisis_ventas", StringComparison.OrdinalIgnoreCase) ?? false));
 
-        return dw?.Value ?? all.FirstOrDefault().Value
+        return dw.Value ?? all.FirstOrDefault().Value
             ?? throw new InvalidOperationException("No se encontró cadena de conexión SQL Server.");
     }
 
@@ -335,3 +335,4 @@ public sealed class SqlDimensionLoader(IConfiguration config, ILogger<SqlDimensi
         await ExecuteInsertAsync(conn, "etl_log", meta, values, ct);
     }
 }
+
