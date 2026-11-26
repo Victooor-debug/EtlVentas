@@ -1,6 +1,20 @@
-﻿namespace Etl.Application;
+﻿using System.Globalization;
 
-public record DimTiempoRow(int TiempoId, DateTime Fecha, int Dia, int Mes, string NombreMes, int Trimestre, int Anio);
+namespace Etl.Application;
+
+public record DimTiempoRow(
+    int TiempoId,
+    DateTime Fecha,
+    int Dia,
+    int Mes,
+    string NombreMes,
+    int Trimestre,
+    int Anio,
+    int DiaSemana,
+    string NombreDia,
+    int SemanaAnio,
+    bool EsFinDeSemana);
+
 public record DimClienteRow(string Codigo, string Nombre, string TipoCliente, string Email, string Pais, string Region, string Ciudad, string Fuente);
 public record DimProductoRow(string Codigo, string Nombre, string Categoria, string Subcategoria, string Marca, decimal PrecioActual, decimal CostoUnitario, string Fuente);
 public record DimVendedorRow(string Codigo, string Nombre, string Region, string Fuente);
@@ -11,6 +25,11 @@ public static class DimensionMapper
     [
         "", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
         "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+    ];
+
+    private static readonly string[] Dias =
+    [
+        "Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"
     ];
 
     public static string ObtenerNombreMes(int mes) => mes is >= 1 and <= 12 ? Meses[mes] : "Desconocido";
@@ -27,7 +46,11 @@ public static class DimensionMapper
                 d.Month,
                 ObtenerNombreMes(d.Month),
                 ObtenerTrimestre(d.Month),
-                d.Year))
+                d.Year,
+                d.DayOfWeek == DayOfWeek.Sunday ? 7 : (int)d.DayOfWeek,
+                Dias[(int)d.DayOfWeek],
+                ISOWeek.GetWeekOfYear(d),
+                d.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday))
             .ToList();
 
     public static IReadOnlyList<DimClienteRow> BuildClientes(IEnumerable<DimensionSourceRow> rows) =>

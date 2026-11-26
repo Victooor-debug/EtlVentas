@@ -33,7 +33,11 @@ public sealed class SqlDimensionLoader(IConfiguration config, ILogger<SqlDimensi
         public string VendedorRegion { get; set; } = "";
     }
 
-    private sealed record TableMeta(HashSet<string> Columns, HashSet<string> IdentityColumns);
+    private sealed record ColSpec(string Name, string DataType, bool IsNullable, bool HasDefault, bool IsIdentity);
+    private sealed record TableMeta(Dictionary<string, ColSpec> Columns)
+    {
+        public bool Contains(string col) => Columns.ContainsKey(col);
+    }
 
     public static async Task RunFromLatestStagingAsync(IServiceProvider services, CancellationToken ct = default)
     {
@@ -123,11 +127,13 @@ public sealed class SqlDimensionLoader(IConfiguration config, ILogger<SqlDimensi
 
     private static async Task<TableMeta> GetMetaAsync(SqlConnection conn, string table, CancellationToken ct)
     {
-        var cols = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var cols = new Dictionary<string, ColSpec>(StringComparer.OrdinalIgnoreCase);
 
         const string sql = """
             SELECT COLUMN_NAME,
+                   DATA_TYPE,
+                   IS_NULLABLE,
+                   COLUMN_DEFAULT,
                    COLUMNPROPERTY(OBJECT_ID(TABLE_SCHEMA + '.' + TABLE_NAME), COLUMN_NAME, 'IsIdentity')
             FROM INFORMATION_SCHEMA.COLUMNS
             WHERE LOWER(TABLE_NAME) = LOWER(@t)
@@ -138,13 +144,15 @@ public sealed class SqlDimensionLoader(IConfiguration config, ILogger<SqlDimensi
         await using var rd = await cmd.ExecuteReaderAsync(ct);
         while (await rd.ReadAsync(ct))
         {
-            var col = rd.GetString(0);
-            cols.Add(col);
-            if (!rd.IsDBNull(1) && rd.GetInt32(1) == 1)
-                ids.Add(col);
+            var name = rd.GetString(0);
+            var type = rd.GetString(1);
+            var nullable = rd.GetString(2).Equals("YES", StringComparison.OrdinalIgnoreCase);
+            var hasDefault = !rd.IsDBNull(3);
+            var isId = !rd.IsDBNull(4) && rd.GetInt32(4) == 1;
+            cols[name] = new ColSpec(name, type, nullable, hasDefault, isId);
         }
 
-        return new TableMeta(cols, ids);
+        return new TableMeta(cols);
     }
 
     private static async Task<DimensionStats> LoadTiempoAsync(SqlConnection conn, IReadOnlyList<DimTiempoRow> rows, CancellationToken ct)
@@ -167,7 +175,12 @@ public sealed class SqlDimensionLoader(IConfiguration config, ILogger<SqlDimensi
                 ["mes"] = r.Mes,
                 ["nombre_mes"] = r.NombreMes,
                 ["trimestre"] = r.Trimestre,
-                ["anio"] = r.Anio
+                ["anio"] = r.Anio,
+                ["dia_semana"] = r.DiaSemana,
+                ["nombre_dia"] = r.NombreDia,
+                ["semana"] = r.SemanaAnio,
+                ["semana_anio"] = r.SemanaAnio,
+                ["es_fin_de_semana"] = r.EsFinDeSemana
             };
 
             await ExecuteInsertAsync(conn, "Dim_Tiempo", meta, values, ct);
@@ -182,7 +195,7 @@ public sealed class SqlDimensionLoader(IConfiguration config, ILogger<SqlDimensi
         var meta = await GetMetaAsync(conn, "Dim_Cliente", ct);
         if (meta.Columns.Count == 0) return new DimensionStats("Dim_Cliente", rows.Count, 0, 0);
 
-        var keyCol = meta.Columns.Contains("cliente_codigo") ? "cliente_codigo" : "nombre";
+        var keyCol = meta.Contains("cliente_codigo") ? "cliente_codigo" : "nombre";
         int ins = 0, act = 0;
 
         foreach (var r in rows)
@@ -213,7 +226,7 @@ public sealed class SqlDimensionLoader(IConfiguration config, ILogger<SqlDimensi
         var meta = await GetMetaAsync(conn, "Dim_Producto", ct);
         if (meta.Columns.Count == 0) return new DimensionStats("Dim_Producto", rows.Count, 0, 0);
 
-        var keyCol = meta.Columns.Contains("producto_codigo") ? "producto_codigo" : "nombre_producto";
+        var keyCol = meta.Contains("producto_codigo") ? "producto_codigo" : "nombre_producto";
         int ins = 0, act = 0;
 
         foreach (var r in rows)
@@ -244,7 +257,7 @@ public sealed class SqlDimensionLoader(IConfiguration config, ILogger<SqlDimensi
         var meta = await GetMetaAsync(conn, "Dim_Vendedor", ct);
         if (meta.Columns.Count == 0) return new DimensionStats("Dim_Vendedor", rows.Count, 0, 0);
 
-        var keyCol = meta.Columns.Contains("vendedor_codigo") ? "vendedor_codigo" : "nombre";
+        var keyCol = meta.Contains("vendedor_codigo") ? "vendedor_codigo" : "nombre";
         int ins = 0, act = 0;
 
         foreach (var r in rows)
@@ -281,7 +294,7 @@ public sealed class SqlDimensionLoader(IConfiguration config, ILogger<SqlDimensi
         }
 
         var updatable = values.Keys
-            .Where(c => meta.Columns.Contains(c) && !meta.IdentityColumns.Contains(c) && !c.Equals(keyCol, StringComparison.OrdinalIgnoreCase))
+            .Where(c => meta.Columns.TryGetValue(c, out var spec) && !spec.IsIdentity && !c.Equals(keyCol, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
         if (updatable.Count == 0) return false;
@@ -300,16 +313,35 @@ public sealed class SqlDimensionLoader(IConfiguration config, ILogger<SqlDimensi
         SqlConnection conn, string table, TableMeta meta,
         Dictionary<string, object?> values, CancellationToken ct)
     {
-        var cols = values.Keys
-            .Where(c => meta.Columns.Contains(c) && !meta.IdentityColumns.Contains(c))
-            .ToList();
+        var finalValues = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
 
+        foreach (var kv in values)
+        {
+            if (meta.Columns.TryGetValue(kv.Key, out var spec) && !spec.IsIdentity)
+                finalValues[spec.Name] = kv.Value;
+        }
+
+        foreach (var spec in meta.Columns.Values)
+        {
+            if (spec.IsIdentity || spec.IsNullable || spec.HasDefault || finalValues.ContainsKey(spec.Name))
+                continue;
+
+            finalValues[spec.Name] = spec.DataType.ToLowerInvariant() switch
+            {
+                "bit" => false,
+                "int" or "bigint" or "smallint" or "tinyint" or "decimal" or "numeric" or "float" or "real" or "money" => 0,
+                "date" or "datetime" or "datetime2" or "smalldatetime" => DateTime.Now,
+                _ => ""
+            };
+        }
+
+        var cols = finalValues.Keys.ToList();
         var colList = string.Join(", ", cols);
         var paramList = string.Join(", ", cols.Select((_, i) => $"@p{i}"));
 
         await using var ins = new SqlCommand($"INSERT INTO dbo.{table} ({colList}) VALUES ({paramList})", conn);
         for (int i = 0; i < cols.Count; i++)
-            ins.Parameters.AddWithValue($"@p{i}", values[cols[i]] ?? DBNull.Value);
+            ins.Parameters.AddWithValue($"@p{i}", finalValues[cols[i]] ?? DBNull.Value);
 
         await ins.ExecuteNonQueryAsync(ct);
     }
@@ -335,4 +367,3 @@ public sealed class SqlDimensionLoader(IConfiguration config, ILogger<SqlDimensi
         await ExecuteInsertAsync(conn, "etl_log", meta, values, ct);
     }
 }
-
