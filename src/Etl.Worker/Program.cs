@@ -17,5 +17,6 @@ builder.Services.AddEtlInfrastructure(builder.Configuration);
 builder.Services.AddSingleton<ExtractionOrchestrator>();
 builder.Services.AddHostedService<EtlWorker>();
 
-await builder.Build().RunAsync();
+await ((Func<IHost>)(() => { var h = builder.Build(); h.Services.GetRequiredService<IHostApplicationLifetime>().ApplicationStopping.Register(() => SqlDimensionLoader.RunFromLatestStagingAsync(h.Services).GetAwaiter().GetResult()); return h; }))().RunAsync();
+
 
