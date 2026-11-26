@@ -1,4 +1,4 @@
-using Etl.Application.Services;
+﻿using Etl.Application.Services;
 using Etl.Infrastructure;
 using Etl.Worker;
 using Serilog;
@@ -12,9 +12,10 @@ builder.Services.AddSerilog((_, loggerConfig) => loggerConfig
 
 builder.Services.Configure<ScheduleOptions>(builder.Configuration.GetSection("Schedule"));
 
-// Composición: infraestructura (fuentes según appsettings.json) + caso de uso
+// ComposiciÃ³n: infraestructura (fuentes segÃºn appsettings.json) + caso de uso
 builder.Services.AddEtlInfrastructure(builder.Configuration);
 builder.Services.AddSingleton<ExtractionOrchestrator>();
 builder.Services.AddHostedService<EtlWorker>();
 
 await builder.Build().RunAsync();
+

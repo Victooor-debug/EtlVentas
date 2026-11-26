@@ -20,3 +20,7 @@ GRANT SELECT ON dbo.Clientes      TO etl_lector;
 -- Solo inserción en la bitácora (SqlEtlAuditLog)
 GRANT INSERT ON dbo.etl_log TO etl_escritor;
 GO
+
+SELECT * FROM dbo.etl_log ORDER BY 1 DESC;
+
+SELECT * FROM dbo.etl_log ORDER BY 1 DESC;
